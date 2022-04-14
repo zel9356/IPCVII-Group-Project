@@ -13,7 +13,9 @@ IPCV II Group Project
 import math
 import numpy as np
 import cv2 as cv
-from PIL import Image, ImageEnhance
+import sys
+import effects
+
 """
 extract the biggest shape from image1
 img: image 1 to extract an object from
@@ -36,13 +38,13 @@ def imageOne(img):
 
     # Canny edge detection
     Canny = cv.Canny(img_blur, 100, 200)
-    cv.imshow("edge", Canny)
+    cv.imshow("Canny Edges", Canny)
     cv.waitKey(0)
 
     # morphology - thicken those lines
     kernel = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
     opening = cv.morphologyEx(Canny, cv.MORPH_CLOSE, kernel)
-    cv.imshow("Morph", opening)
+    cv.imshow("Morphology Result", opening)
     cv.waitKey(0)
 
     # find shapes
@@ -55,7 +57,7 @@ def imageOne(img):
 
     # cv.drawContours(roi_cropped, largest_item, -1, (255, 0, 0), 10)
 
-    cv.imshow('Largest Object', roi_cropped)
+    cv.imshow('Largest Object Extracted', roi_cropped)
     result_img = np.zeros(shape=roi_cropped.shape, dtype=np.uint8)
 
     # Create a mask image that contains the contour filled in
@@ -71,7 +73,9 @@ def imageOne(img):
     cv.waitKey(0)
     return result_img
 
-
+"""
+Puts image 1 into image 2
+"""
 def image2(img1, img2):
     roi = cv.selectROI(img2)
     img1 = cv.resize(img1, (roi[2], roi[3]), interpolation=cv.INTER_AREA)
@@ -93,29 +97,93 @@ def image2(img1, img2):
     cv.waitKey(0)
     return img2
 
+"""
+Roates image angle degrees
+"""
+#https://stackoverflow.com/questions/9041681/opencv-python-rotate-image-by-x-degrees-around-specific-point
+def rotate(image, angle):
+    (h, w) = image.shape[:2]
+    center = (w / 2, h / 2)
+    # Perform the rotation
+    M = cv.getRotationMatrix2D(center, angle, 1)
+    rotated = cv.warpAffine(image, M, (w, h))
 
+    return rotated
 def main():
 
 
-    img1 = cv.imread("apple.png")
+    if len(sys.argv) == 6 or len(sys.argv ) == 7:
 
-    scale_percent = 25  # percent of original size
-    width = int(img1.shape[1] * scale_percent / 100)
-    height = int(img1.shape[0] * scale_percent / 100)
-    dim = (width, height)
+        # command line inputs
 
-    # resize image
-    img1 = cv.resize(img1, dim, interpolation=cv.INTER_AREA)
+        # image 1 location and name
+        imageName1 = sys.argv[1]
 
-    result = imageOne(img1)
+        #image 2 location and name
+        imageName2 = sys.argv[2]
+
+        # desired artistic effect
+        artEffect = sys.argv[3]
+
+        # Rotation angle
+        rotation = int(sys.argv[4])
+
+        # filp (-1) if no flip
+        flip = int(sys.argv[5])
+
+        # read in both images
+        img1 = cv.imread(imageName1)
+        img2 = cv.imread(imageName2)
+
+        # get height and width of each image
+        h1, w1, c1 = img1.shape
+        h2, w2, c2 = img2.shape
+
+        # if either dim on orginal image is greater than 1000, scale down
+        if h1 or w1 > 1000:
+            # lets make hieght 500 pixels cause i said so
+            scale_percent = int(h1/500)
+            #scale_percent = 50  # percent of original size
+            width = int(img1.shape[1] /scale_percent )
+            height = int(img1.shape[0] / scale_percent )
+            dim = (width, height)
+            # resize image
+            img1 = cv.resize(img1, dim, interpolation=cv.INTER_AREA)
+        if rotation != 0:
+            img1 = rotate(img1, rotation)
+        if flip != -1:
+            if flip == 1 or 0:
+                img1 = cv.flip(img1, flip)
 
 
+        # lets make sure image 2 fits on screen
+        if h2 > 1000:
+            scale_percent = int(h2 / 1000)
+            width = int(img2.shape[1] /scale_percent )
+            height = int(img2.shape[0] /scale_percent )
+            dim = (width, height)
 
-    # image 2
-    img2 = cv.imread("desert.jpg")
-    result = image2(result, img2)
-    # save image
-    cv.imwrite("result.jpg", result)
+            # resize image
+            img2 = cv.resize(img2, dim, interpolation=cv.INTER_AREA)
+
+        # lets grab the largest "object" from image1
+        result = imageOne(img1)
+
+        # Put the result/object in image 2
+        result = image2(result, img2)
+        # save image if told to
+        if artEffect == "pencil":
+            result = effects.pencil(result)
+        elif artEffect =="water":
+            result = effects.watercolor(result)
+        elif artEffect == "oil":
+            result = effects.oilPainting(result)
+
+        if len(sys.argv) ==7:
+            dst = sys.argv[6]
+            cv.imwrite(dst, result)
+    else:
+        print("Usage: <image1 name> <image2 name> <artistic effect: oil, pencil, water> <rotation angle> <flip (-1: no flip, 0: horizontal, 1:vertical)> \n or <image1 name> <image2 name> <artistic effect: oil, pencil, water> <rotation angle> <flip (-1: no flip, 0: horizontal, 1:vertical)> <output file name>")
 
 
 
