@@ -144,7 +144,7 @@ def main():
             # lets make hieght 500 pixels cause i said so
             scale_percent = int(h1/500)
             if scale_percent ==0:
-                cale_percent = 1
+                scale_percent = 1
             #scale_percent = 50  # percent of original size
             width = int(img1.shape[1] /scale_percent )
             height = int(img1.shape[0] / scale_percent )
@@ -162,7 +162,7 @@ def main():
         if h2 > 1000:
             scale_percent = int(h2 / 1000)
             if scale_percent ==0:
-                cale_percent = 1
+                scale_percent = 1
             width = int(img2.shape[1] /scale_percent )
             height = int(img2.shape[0] /scale_percent )
             dim = (width, height)
