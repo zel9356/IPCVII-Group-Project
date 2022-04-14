@@ -178,7 +178,8 @@ def main():
             result = effects.watercolor(result)
         elif artEffect == "oil":
             result = effects.oilPainting(result)
-
+        cv.imshow("Art Effect", result)
+        cv.waitKey(0)
         if len(sys.argv) ==7:
             dst = sys.argv[6]
             cv.imwrite(dst, result)
